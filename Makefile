@@ -1,12 +1,19 @@
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -Iinclude
+LDFLAGS =
+all: folders orchestrator client
 
-all: void hello
+orchestrator: bin/orchestrator
 
-void: void.c
+client: bin/client
 
-hello: hello.c
-
+folders:
+	@mkdir -p src include obj bin tmp
+bin/orchestrator: obj/orchestrator.o
+	$(CC) $(LDFLAGS) $^ -o $@
+bin/client: obj/client.o
+	$(CC) $(LDFLAGS) $^ -o $@
+obj/%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 clean:
-	rm -rf void hello *.dSYM
-
+	rm -f obj/* tmp/* bin/*
