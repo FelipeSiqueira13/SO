@@ -6,38 +6,16 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include "input.h"
 
 #define BUF_SIZE 1024
 #define MAX_COMMANDS 300
 #define READ 0
 #define WRITE 1
 
-int exec_command(char* arg){
-
-	//Estamos a assumir numero maximo de argumentos
-	char* exec_args[300];
-	char* string;	
-	int exec_ret = 0;
-	int i = 0;
-	char* command = strdup(arg);
-	string=strtok(command," ");
-	
-	while(string != NULL){
-		exec_args[i] = string;
-		string = strtok(NULL," ");
-		i++;
-	}
-
-	exec_args[i] = NULL;
-	exec_ret = execvp(exec_args[0],exec_args);
-
-	return exec_ret;
-}
-
-void uniexec(char arg[]){}
-
 int main(int argc, char** argv){
 
+    pid_t pid = getpid();
     int number_of_commands = 4;
     char * commands[] = {
 		"execute",
@@ -45,34 +23,57 @@ int main(int argc, char** argv){
         "-p",
         "status"
 	};
-
-    struct input{
-        int time;
-        char* args[];
-    };
     struct input in;
+    in.pid = pid;
+    int fd = open("server", O_WRONLY);
+    if (fd == -1){
+        perror("erro ao abrir fifo para escrita");
+    }
+    printf("ola4\n");
 
     if(strcmp(argv[1],"execute") == 0){
-        in.time = argv[2];
-        if(strcmp(argv[3],"-u") == 0){//execução de uma tarefa
-            char nome[10] = "./";
-            strcat(nome, argv[4]);
-            in.args[0] = nome;
-            int j = 5;
-           for(int i = 1; i < strlen(argv); i++){
-				in.args[i] = argv[j];
-                j++;
+        printf("aaa");
+        if(strcmp("-u",argv[3]) == 0){
+            in.time = atoi(argv[2]); 
+            printf("a");
+            char comand[300] = "./";
+            strcat(comand, argv[4]);
+            strcat(comand, " ");
+           for(int i = 5; i < strlen(argv); i++){
+                printf("b");
+                strcat(comand, argv[i]);
+                strcat(comand, " ");
 			}
-            exec_unico(in.args);
+            printf("\n%s",comand);
+            strcpy(in.args,comand);
+            printf("\n%s",in.args);
+            write(fd, &in, sizeof(struct input));   
+            getchar();                              
+            //exec_unico(in.args);
         }//elif (strcmp(argv[3],"-p") == 0){//execução de muitas tarefas}  
         else{
+            printf("wow");
             perror("Falta argumentos para a execução do programa.");
             _exit(EXIT_FAILURE);
         }        
     }else{
-        perros("Falta argumentos para a execução do programa.");
+        perror("Falta argumentos para a execução do programa.");
         _exit(EXIT_FAILURE);
     }
-
+    //abrir o fifo com o número do pip 
+    int fd_fifostatus = open(pid, O_RDONLY);
+    if(fd_fifostatus == -1){
+        perror("erro ao abrir fifo para leitura");
+        return -1;
+    }
+    char buffer[BUF_SIZE];
+	int read_bytes;
+	while ((read_bytes = read(fd_fifostatus, buffer, sizeof(buffer))) > 0){
+		write(1, buffer, read_bytes);
+        getchar();
+	}
+	close(fd_fifostatus);
+	
+    //while(1) printf("Estou vivo");
     return 0;
 }
