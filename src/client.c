@@ -60,6 +60,21 @@ int main(int argc, char** argv){
         perror("Falta argumentos para a execução do programa.");
         _exit(EXIT_FAILURE);
     }
+
+    //abrir o fifo com o número do pip 
+    int fd_fifostatus = open(pid, O_RDONLY);
+    if(fd_fifostatus == -1){
+        perror("erro ao abrir fifo para leitura");
+        return -1;
+    }
+    char buffer[BUF_SIZE];
+	int read_bytes;
+	while ((read_bytes = read(fd_fifostatus, buffer, sizeof(buffer))) > 0){
+		write(1, buffer, read_bytes);
+        getchar();
+	}
+	close(fd_fifostatus);
+	
     //while(1) printf("Estou vivo");
     return 0;
 }
