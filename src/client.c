@@ -46,7 +46,9 @@ int main(int argc, char** argv){
 			}
             printf("\n%s",comand);
             strcpy(in.args,comand);
-            write(fd, &in, 8);                                 
+            printf("\n%s",in.args);
+            write(fd, &in, sizeof(struct input));   
+            getchar();                              
             //exec_unico(in.args);
         }//elif (strcmp(argv[3],"-p") == 0){//execução de muitas tarefas}  
         else{

@@ -34,46 +34,44 @@ void organizer(struct listinput *lista,int tamanho){
 
 int main()
 {
-    int i;
-    int fd = mkfifo("server", 0666);
-    if(fd==-1){
-        perror("erro na criação do fifo");
-    }
-    fd = open("server", O_RDONLY);
+    int i,*tamanhodaLista;
+    mkfifo("server", 0666);
+    int fd = open("server", O_RDONLY);
     if (fd == -1){
         perror("erro ao abrir fifo para escrita");
     }
 
-    struct listinput lista;
+    struct listinput *lista;
     for(i=0;i<5;i++){
-        lista.list[i].time = 24 - i;
+        lista->list[i].time = 24 - i;
     }
-    strcpy(lista.list[0].args[0],"hello");
-    strcpy(lista.list[0].args[1],"4");
-    strcpy(lista.list[1].args[0],"hello");
-    strcpy(lista.list[1].args[1],"6");
-    strcpy(lista.list[2].args[0],"hello");
-    strcpy(lista.list[2].args[1],"7");
-    strcpy(lista.list[3].args[0],"hello");
-    strcpy(lista.list[3].args[1],"13");
-    strcpy(lista.list[4].args[0],"hello");
-    strcpy(lista.list[4].args[1],"10");
+    strcpy(lista->list[0].args,"./hello 10");
+    strcpy(lista->list[1].args,"./hello 7");
+    strcpy(lista->list[2].args,"./hello 3");
+    strcpy(lista->list[3].args,"./hello 9");
+    strcpy(lista->list[4].args,"./hello 1");
+    *tamanhodaLista = 5;
     //char *comando[] = {"./hello","20",NULL};
     int bytes_read, end;
-    
-    struct input *a;
+    struct input a;
+    char hello[300];
     //execvp(comando[0],comando);
-    while((bytes_read = read(fd, a, 8)) > 0){
+    while((bytes_read = read(fd, &a, sizeof(struct input))) > 0){
         //escrever para o fifo
+        //b = *a;
         printf("recebi algo\n");
-        printf("ola amigo %s",a->args);
+        printf("ola amigo %d %d %s\n\n",a.pid,a.time,a.args);
+        
+        
+        //printf("ola amigo %s\n",b.args);
+        //write(1,a,bytes_read);
+        //write(1,bytes_read,8);
     }
     //execvp
     organizer(&lista,5);
-    for(i=0;i<5;i++){
-        printf("%d  %s\n",lista.list[i].time,lista.list[i].args);
-    }
 
 
+
+    unlink("server");
     return 0;
 }
