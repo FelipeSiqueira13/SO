@@ -25,6 +25,7 @@ int main(int argc, char** argv){
 	};
     struct input in;
     in.pid = pid;
+    in.pronto = 0;
     int fd = open("server", O_WRONLY);
     if (fd == -1){
         perror("erro ao abrir fifo para escrita");
