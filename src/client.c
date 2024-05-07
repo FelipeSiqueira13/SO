@@ -81,10 +81,6 @@ int main(int argc, char** argv){
         memset(msg,"\0",sizeof(msg));
         read(fd_recieve, msg, sizeof(msg));
         write(WRITE,msg,sizeof(msg));
-        read(fd_recieve, msg, sizeof(msg));
-        write(WRITE,msg,sizeof(msg));
-        read(fd_recieve, msg, sizeof(msg));
-        write(WRITE,msg,sizeof(msg));
         close(fd_recieve);
         unlink(strpid);
         perror("au");

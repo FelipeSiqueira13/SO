@@ -43,7 +43,6 @@ void single_exec(struct input in, char *fld){
     comando[i] = NULL;
     strcat(ini,comando[0]);
     comando[0] = ini;
-    write(1,ini,sizeof(comando[0]));
     perror("poggers");
     fd_out = open(caminho, O_CREAT | O_WRONLY | O_APPEND, 0660);
     dup2(fd_out,STDOUT_FILENO);
@@ -100,14 +99,18 @@ void status(pid_t pid,int max){
     for(i=0; i< BUF_SIZE;i++) msg[i] = '\0';
     memset(fifores,"\0",sizeof(fifores));
     sprintf(fifores,"%d",pid);
-    int fd_sts = open(LISTA, O_RDONLY), bytes_read,p=-1,g=-1,e=-1;
+    int fd_sts = open(LISTA, O_RDONLY), bytes_read,p=0,g=0,e=0;
     while((bytes_read = read(fd_sts, &temp, sizeof(struct input))) > 0){
+        write(1,temp.args,sizeof(temp.args));
         if(temp.pronto == 0 || temp.pronto==4){
-            cpyinput(&espera[e++],temp);
+            cpyinput(&espera[e],temp);
+            e++;
         }else if(temp.pronto == 1 || temp.pronto == 5){
             cpyinput(&going[g++],temp);
+            g++;
         }else if(temp.pronto == 2|| temp.pronto == 6){
-            cpyinput(&pronto[p++],temp);
+            cpyinput(&pronto[p],temp);
+            p++;
         }
     }
     close(fd_sts);
@@ -115,28 +118,107 @@ void status(pid_t pid,int max){
     char strid[10];
     int lista = open(fifores, O_WRONLY);
     for(i=0;i<g;i++){
+        write(1,msg,sizeof(msg));
         sprintf(strid,"%d",going[i].id);
         strcat(msg,strid);
         strcat(msg," ");
-        strcat(msg, going[i].args);
-        strcat(msg,"\n");
+        if (going[i].pronto == 1) {
+            char *chave;
+            chave = strtok(going[i].args, " ");
+            strcat(msg, chave);
+        } else if (going[i].pronto == 5) {
+            char *chavearray[MAX_COMMANDS];
+            char *string;	
+	        int k=0;
+
+	        char* command = strdup(going[i].args);
+
+	        string=strtok(command,"|");
+
+            while(string!=NULL){
+                chavearray[k]=string;
+                string=strtok(NULL,"|");
+                k++;
+            }
+
+            char *chavefinal;
+            for (int j=0;j<k;j++) {
+                chavefinal = strtok(chavearray[j], " ");
+                strcat(msg,chavefinal);
+                if (j != k-1) strcat(msg," | ");
+            }
+        }
+        strcat(msg," \n");
     }
-    write(lista,msg,sizeof(msg));
-    strcpy(msg,"\nScheduled\n");
+    strcat(msg,"\nScheduled\n");
     for(i=0;i<e;i++){
         sprintf(strid,"%d",espera[i].id);
         strcat(msg,strid);
         strcat(msg," ");
-        strcat(msg, espera[i].args);
+        if (espera[i].pronto == 0) {
+            char *chave;
+            chave = strtok(espera[i].args, " ");
+            strcat(msg, chave);
+        } else if (espera[i].pronto == 4) {
+            char *chavearray[MAX_COMMANDS];
+            char *string;	
+	        int i=0;
+
+	        char* command = strdup(espera[i].args);
+
+	        string=strtok(command,"|");
+
+            while(string!=NULL){
+                chavearray[i]=string;
+                string=strtok(NULL,"|");
+                i++;
+            }
+
+            char *chavefinal;
+            for (int j=0;j<i;j++) {
+                chavefinal = strtok(chavearray[j], " ");
+                strcat(msg,chavefinal);
+                if (j != i-1) strcat(msg," | ");
+            }
+        }    
         strcat(msg,"\n");
     }
-    write(lista,msg,sizeof(msg));
-    strcpy(msg,"\nCompleted\n");
+    strcat(msg,"\nCompleted\n");
     for(i=0;i<p;i++){
+        write(1,msg,sizeof(msg));
         sprintf(strid,"%d",pronto[i].id);
         strcat(msg,strid);
         strcat(msg," ");
-        strcat(msg, pronto[i].args);
+        if (pronto[i].pronto == 2) {
+            char *chave;
+            chave = strtok(pronto[i].args, " ");
+            strcat(msg, chave);
+        } else if (pronto[i].pronto == 6) {
+            char *chavearray[MAX_COMMANDS];
+            char *string;	
+	        int i=0;
+
+	        char* command = strdup(pronto[i].args);
+
+	        string=strtok(command,"|");
+
+            while(string!=NULL){
+                chavearray[i]=string;
+                string=strtok(NULL,"|");
+                i++;
+            }
+
+            char *chavefinal;
+            for (int j=0;j<i;j++) {
+                chavefinal = strtok(chavearray[j], " ");
+                strcat(msg,chavefinal);
+                if (j != i-1) strcat(msg," | ");
+            }
+        }
+        strcat(msg," ");
+        sprintf(strid,"%d",pronto[i].time);
+        strcat(msg,strid);
+        strcat(msg, " ms");
         strcat(msg,"\n");
     }
     write(lista,msg,sizeof(msg));
@@ -160,7 +242,6 @@ void response(pid_t pid, int id){
 
 void insert(struct input in){
     perror("2");
-    write(1,in.args,sizeof(in.args));
     int lista = open(LISTA, O_WRONLY | O_APPEND);
     write(lista, &in, sizeof(struct input));
     close(lista);
@@ -202,7 +283,6 @@ int main(int argc, char* argv[]){
                 }
             }else if(in.pronto == 0){
                 pos++;
-                write(1,in.args,sizeof(in.args));
                 in.id = pos;
                 insert(in);
                 response(in.pid,in.id);
@@ -250,8 +330,6 @@ int main(int argc, char* argv[]){
                     tofork.pid = in.pid;
                     strcpy(tofork.args,in.args);
                     perror("perros");
-                    write(1,in.args,sizeof(in.args));
-                    write(1,tofork.args,sizeof(tofork.args));
                     tofork.pronto = in.pronto;
                     tofork.time = 0;
                     lseek(fd_lista, -sizeof(struct input), SEEK_CUR);
@@ -266,7 +344,6 @@ int main(int argc, char* argv[]){
                 gettimeofday(&inicio,NULL);
                 if(tofork.pronto==1){
                 perror("slay");
-                write(1,tofork.args,sizeof(tofork.args));
                 single_exec(tofork,saida);
 
                 }else if(tofork.pronto == 5){
