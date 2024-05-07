@@ -20,16 +20,19 @@ void single_exec(struct input in, char *fld){
     char *comando[300];
     char *temp;
     char ini[50] = "include/";
+    perror("ola");
     char strid[10];
     sprintf(strid,"%d",in.id);
     int i = 0,fd_out,tofork; 
     int standardout = dup(STDOUT_FILENO);
     char caminho[50];
+    perror("aaa");
     memset(caminho,0,sizeof(caminho));
     strcpy(caminho,fld);
     strcat(caminho,"/");
     strcat(caminho,strid);
     strcat(caminho,".txt");
+    perror("pog");
     char *dupcomando = strdup(in.args);
     temp=strtok(dupcomando," ");
 	while(temp!=NULL){
@@ -40,6 +43,7 @@ void single_exec(struct input in, char *fld){
     comando[i] = NULL;
     strcat(ini,comando[0]);
     comando[0] = ini;
+    perror("poggers");
     fd_out = open(caminho, O_CREAT | O_WRONLY | O_APPEND, 0660);
     dup2(fd_out,STDOUT_FILENO);
 	tofork = fork();
@@ -68,14 +72,6 @@ void multi_exec(struct input in, char *fld){
 
 }
 
-void organizer(struct listinput *lista,int tamanho){
-    int i,j;
-    struct input temp;
-    for(i = 1;i<tamanho;i++){
-        //organizar lista
-        
-    }
-}
 
 void cpyinput(struct input *to,struct input from){
     to->id = from.id;
@@ -237,6 +233,7 @@ void response(pid_t pid, int id){
 }
 
 void insert(struct input in){
+    perror("2");
     int lista = open(LISTA, O_WRONLY | O_APPEND);
     write(lista, &in, sizeof(struct input));
     close(lista);
@@ -260,6 +257,7 @@ int main(int argc, char* argv[]){
         int lista = open(LISTA, O_CREAT, 0600);
         if(lista == -1) perror("erro ao abrir o log");
         close(lista);
+        perror("mariana");
         struct input in;
         int fd ;
         int ligado = 1;
@@ -303,7 +301,7 @@ int main(int argc, char* argv[]){
     }else{
         struct timeval inicio,fim;
         struct input in, tofork;
-        int assist[max],i,vivo=1, atual, fd_lista, lido, new,status,c,k,leu,total,contou;
+        int i,k,vivo=1, atual, fd_lista, lido,contou,total, new,status,bytes_read,menor = -1,entrou;
         double tempopassado;
         char *contando = "tmp/contando.txt";
         int cont_fd;
@@ -319,39 +317,72 @@ int main(int argc, char* argv[]){
             total=0;
             while((bytes_read = read(cont_fd,&contou,sizeof(contou)))>0) {
                 if (contou != 0) {
-                    perror("achei espaç");
                     total++;
                 }
             }
             close(cont_fd);
             if (total == max) {
-                perror("sem espaço");
                 wait(NULL);
             } else {lido = 1;}
             fd_lista = open(LISTA,O_RDWR);
             memset(tofork.args,'\0',sizeof(tofork.args));
-            while(lido == 1 && (bytes_read = read(fd_lista, &in , sizeof(struct input)))>0){
-                if(in.pronto == 0 || in.pronto == 4){ 
-                    lido = 0;
-                    cont_fd = open(contando,O_RDWR);
-                    while((bytes_read= read(cont_fd,&contou,sizeof(contou)))>0 && contou != 0);
-                    if (contou == 0) {
-                        perror("editei");
-                        lseek(cont_fd,-sizeof(contou),SEEK_CUR);
-                        write(cont_fd,&in.id,sizeof(contou));
-                    }
-                    close(cont_fd);
-                    assist[atual] = in.id;
-                    in.pronto++;
-                    tofork.id = in.id;
-                    tofork.pid = in.pid;
-                    strcpy(tofork.args,in.args);
-                    tofork.pronto = in.pronto;
-                    tofork.time = 0;
-                    lseek(fd_lista, -sizeof(struct input), SEEK_CUR);
-                    write(fd_lista, &in, sizeof(struct input));
+            entrou = 0;
+            if (politica == 1) {
+                while(lido == 1 && (bytes_read = read(fd_lista, &in , sizeof(struct input)))>0){
+                    if(in.pronto == 0 || in.pronto == 4){ 
+                        lido = 0;
+                        cont_fd = open(contando,O_RDWR);
+                        while((bytes_read= read(cont_fd,&contou,sizeof(contou)))>0 && contou != 0);
+                        if (contou == 0) {
+                            lseek(cont_fd,-sizeof(contou),SEEK_CUR);
+                            write(cont_fd,&in.id,sizeof(contou));
+                        }
+                        close(cont_fd);
+                        in.pronto++;
+                        tofork.id = in.id;
+                        tofork.pid = in.pid;
+                        strcpy(tofork.args,in.args);
+                        tofork.pronto = in.pronto;
+                        tofork.time = 0;
+                        lseek(fd_lista, -sizeof(struct input), SEEK_CUR);
+                        write(fd_lista, &in, sizeof(struct input));
+                    }    
                 }
-            }
+            }/* else if (politica == 2) {
+                while((bytes_read = read(fd_lista, &in, sizeof(struct input)))>0) {
+                    if ((in.pronto == 0 || in.pronto == 4) && (in.time < tofork.time || menor == -1)) {
+                        menor = in.time;
+                        cpyinput(&tofork,in);
+                        entrou = 1;
+                    }
+                }
+                if (entrou == 1) {
+                    lseek(fd_lista,0,SEEK_SET);
+                    while((bytes_read = read(fd_lista, &in, sizeof(struct input)))>0 && in.id!=tofork.id);
+                    if(in.pronto == 0 || in.pronto == 4){ 
+                        lido = 0;
+                        cont_fd = open(contando,O_RDWR);
+                        while((bytes_read= read(cont_fd,&contou,sizeof(contou)))>0 && contou != 0);
+                        if (contou == 0) {
+                            lseek(cont_fd,-sizeof(contou),SEEK_CUR);
+                            write(cont_fd,&in.id,sizeof(contou));
+                        }
+                        close(cont_fd);
+                        in.pronto++;
+                        tofork.id = in.id;
+                        tofork.pid = in.pid;
+                        strcpy(tofork.args,in.args);
+                        tofork.pronto = in.pronto;
+                        tofork.time = 0;
+                        lseek(fd_lista, -sizeof(struct input), SEEK_CUR);
+                        write(fd_lista, &in, sizeof(struct input));
+                    }
+                }    
+            }*/
+            
+
+
+
             close(fd_lista);
             new = 1;
             if (lido==0) new = fork();
@@ -366,6 +397,8 @@ int main(int argc, char* argv[]){
                 wait(&status);
                 gettimeofday(&fim,NULL);
                 if(WIFEXITED(status)){
+                    fd_lista = open(LISTA,O_RDWR);
+                    while((bytes_read = read(fd_lista, &in, sizeof(struct input)))>0 && in.id!=tofork.id);
                     cont_fd = open(contando,O_RDWR);
                     while(bytes_read = read(cont_fd,&contou,sizeof(contou))>0 && contou != in.id);
                     int zerou2 = 0;
@@ -374,8 +407,6 @@ int main(int argc, char* argv[]){
                         write(cont_fd,&zerou2,sizeof(zerou2));
                     }
                     close(cont_fd);
-                    fd_lista = open(LISTA,O_RDWR);
-                    while((bytes_read = read(fd_lista, &in, sizeof(struct input)))>0 && in.id!=tofork.id);
                     in.pronto++;
                     tempopassado = (fim.tv_sec - inicio.tv_sec) * 1000.0;
                     tempopassado += (fim.tv_usec - inicio.tv_usec) / 1000.0;

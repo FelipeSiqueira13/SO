@@ -18,13 +18,10 @@ int main(int argc, char** argv){
     pid_t pid = getpid();
     char strpid[10];
     sprintf(strpid, "%d", pid);
-    perror(":0");
-    perror("slay");
     struct input in;
     in.pid = pid;
     in.pronto = 0;
     memset(in.args,"\0",sizeof(in.args));
-    perror("ola");
     fd_send = open("server", O_WRONLY);
     if (fd_send == -1){
         perror("erro ao abrir fifo para escrita");
@@ -32,7 +29,6 @@ int main(int argc, char** argv){
     printf("ola4\n");
 
     if(strcmp(argv[1],"execute") == 0){
-        perror("0");
         if(strcmp("-u",argv[3]) == 0){
             in.time = atoi(argv[2]);
             in.pronto = 0;
@@ -63,7 +59,6 @@ int main(int argc, char** argv){
         in.time = 0;
         in.pronto = 8;
         in.id = 0;
-        perror("a");
         strcpy(in.args,"\0");
         if (mkfifo(strpid, 0666) == -1) { 
             perror("Erro ao criar FIFO.");
@@ -83,7 +78,6 @@ int main(int argc, char** argv){
         write(WRITE,msg,sizeof(msg));
         close(fd_recieve);
         unlink(strpid);
-        perror("au");
         return 0;
     }else{
         perror("Falta argumentos para a execução do programa.");

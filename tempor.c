@@ -20,16 +20,19 @@ void single_exec(struct input in, char *fld){
     char *comando[300];
     char *temp;
     char ini[50] = "include/";
+    perror("ola");
     char strid[10];
     sprintf(strid,"%d",in.id);
     int i = 0,fd_out,tofork; 
     int standardout = dup(STDOUT_FILENO);
     char caminho[50];
+    perror("aaa");
     memset(caminho,0,sizeof(caminho));
     strcpy(caminho,fld);
     strcat(caminho,"/");
     strcat(caminho,strid);
     strcat(caminho,".txt");
+    perror("pog");
     char *dupcomando = strdup(in.args);
     temp=strtok(dupcomando," ");
 	while(temp!=NULL){
@@ -40,6 +43,7 @@ void single_exec(struct input in, char *fld){
     comando[i] = NULL;
     strcat(ini,comando[0]);
     comando[0] = ini;
+    perror("poggers");
     fd_out = open(caminho, O_CREAT | O_WRONLY | O_APPEND, 0660);
     dup2(fd_out,STDOUT_FILENO);
 	tofork = fork();
@@ -237,6 +241,7 @@ void response(pid_t pid, int id){
 }
 
 void insert(struct input in){
+    perror("2");
     int lista = open(LISTA, O_WRONLY | O_APPEND);
     write(lista, &in, sizeof(struct input));
     close(lista);
@@ -260,6 +265,7 @@ int main(int argc, char* argv[]){
         int lista = open(LISTA, O_CREAT, 0600);
         if(lista == -1) perror("erro ao abrir o log");
         close(lista);
+        perror("mariana");
         struct input in;
         int fd ;
         int ligado = 1;
@@ -319,24 +325,22 @@ int main(int argc, char* argv[]){
             total=0;
             while((bytes_read = read(cont_fd,&contou,sizeof(contou)))>0) {
                 if (contou != 0) {
-                    perror("achei espaç");
                     total++;
                 }
             }
             close(cont_fd);
             if (total == max) {
-                perror("sem espaço");
                 wait(NULL);
             } else {lido = 1;}
             fd_lista = open(LISTA,O_RDWR);
             memset(tofork.args,'\0',sizeof(tofork.args));
             while(lido == 1 && (bytes_read = read(fd_lista, &in , sizeof(struct input)))>0){
                 if(in.pronto == 0 || in.pronto == 4){ 
+                    perror("aqui=");
                     lido = 0;
                     cont_fd = open(contando,O_RDWR);
                     while((bytes_read= read(cont_fd,&contou,sizeof(contou)))>0 && contou != 0);
                     if (contou == 0) {
-                        perror("editei");
                         lseek(cont_fd,-sizeof(contou),SEEK_CUR);
                         write(cont_fd,&in.id,sizeof(contou));
                     }
@@ -346,6 +350,7 @@ int main(int argc, char* argv[]){
                     tofork.id = in.id;
                     tofork.pid = in.pid;
                     strcpy(tofork.args,in.args);
+                    perror("perros");
                     tofork.pronto = in.pronto;
                     tofork.time = 0;
                     lseek(fd_lista, -sizeof(struct input), SEEK_CUR);
@@ -356,15 +361,20 @@ int main(int argc, char* argv[]){
             new = 1;
             if (lido==0) new = fork();
             if(new==0){
+                perror("ops");
                 gettimeofday(&inicio,NULL);
                 if(tofork.pronto==1){
+                perror("slay");
                 single_exec(tofork,saida);
 
                 }else if(tofork.pronto == 5){
                 multi_exec(tofork,saida);
                 }
+                perror("ola");
                 wait(&status);
+                perror("hugo");
                 gettimeofday(&fim,NULL);
+                perror("pogo");
                 if(WIFEXITED(status)){
                     cont_fd = open(contando,O_RDWR);
                     while(bytes_read = read(cont_fd,&contou,sizeof(contou))>0 && contou != in.id);
