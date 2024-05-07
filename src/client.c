@@ -21,12 +21,11 @@ int main(int argc, char** argv){
     struct input in;
     in.pid = pid;
     in.pronto = 0;
-    memset(in.args,"\0",sizeof(in.args));
+    memset(in.args,'\0',sizeof(in.args));
     fd_send = open("server", O_WRONLY);
     if (fd_send == -1){
         perror("erro ao abrir fifo para escrita");
     }
-    printf("ola4\n");
 
     if(strcmp(argv[1],"execute") == 0){
         if(strcmp("-u",argv[3]) == 0){
@@ -34,7 +33,6 @@ int main(int argc, char** argv){
             in.pronto = 0;
             in.id = 0;
             strcpy(in.args,argv[4]);
-            write(1,in.args,sizeof(in.args));
             if (mkfifo(strpid, 0666) == -1) { 
                 perror("Erro ao criar FIFO.");
             }
@@ -67,13 +65,12 @@ int main(int argc, char** argv){
         close(fd_send);
         char msg[MAX_COMMANDS];
         for(int i=0; i< MAX_COMMANDS;i++) msg[i] = '\0';
-        int bytes;
         fd_recieve = open(strpid,O_RDONLY);
         if (fd_recieve == -1) {
             perror("Erro ao abrir fifo2.");
             _exit(EXIT_FAILURE);
         }
-        memset(msg,"\0",sizeof(msg));
+        memset(msg,'\0',sizeof(msg));
         read(fd_recieve, msg, sizeof(msg));
         write(WRITE,msg,sizeof(msg));
         close(fd_recieve);
@@ -94,7 +91,6 @@ int main(int argc, char** argv){
     write(1,msg,sizeof(msg));
     close(fd_recieve);
     unlink(strpid);
-    //while(1) printf("Estou vivo");
 
     return 0;
 }

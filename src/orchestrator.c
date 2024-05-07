@@ -68,15 +68,6 @@ void multi_exec(struct input in, char *fld){
 
 }
 
-void organizer(struct listinput *lista,int tamanho){
-    int i,j;
-    struct input temp;
-    for(i = 1;i<tamanho;i++){
-        //organizar lista
-        
-    }
-}
-
 void cpyinput(struct input *to,struct input from){
     to->id = from.id;
     to->pid = from.pid;
@@ -93,11 +84,10 @@ void status(pid_t pid,int max){
     struct input temp;
     int i;
     for(i=0; i< BUF_SIZE;i++) msg[i] = '\0';
-    memset(fifores,"\0",sizeof(fifores));
+    memset(fifores,'\0',sizeof(fifores));
     sprintf(fifores,"%d",pid);
     int fd_sts = open(LISTA, O_RDONLY), bytes_read,p=0,g=0,e=0;
     while((bytes_read = read(fd_sts, &temp, sizeof(struct input))) > 0){
-        write(1,temp.args,sizeof(temp.args));
         if(temp.pronto == 0 || temp.pronto==4){
             cpyinput(&espera[e],temp);
             e++;
@@ -114,7 +104,6 @@ void status(pid_t pid,int max){
     char strid[10];
     int lista = open(fifores, O_WRONLY);
     for(i=0;i<g;i++){
-        write(1,msg,sizeof(msg));
         sprintf(strid,"%d",going[i].id);
         strcat(msg,strid);
         strcat(msg," ");
@@ -181,7 +170,6 @@ void status(pid_t pid,int max){
     }
     strcat(msg,"\nCompleted\n");
     for(i=0;i<p;i++){
-        write(1,msg,sizeof(msg));
         sprintf(strid,"%d",pronto[i].id);
         strcat(msg,strid);
         strcat(msg," ");
@@ -225,7 +213,7 @@ void status(pid_t pid,int max){
 
 void response(pid_t pid, int id){
     char fifores[20],msg[50] = "TASK ", strid[10];
-    memset(fifores,"\0",sizeof(fifores));
+    memset(fifores,'\0',sizeof(fifores));
     sprintf(strid,"%d",id);
     strcat(msg,strid);
     strcat(msg, " Received\n");
@@ -248,7 +236,6 @@ int main(int argc, char* argv[]){
         return 1;
     }
     int max = atoi(argv[2]);
-    int politica = atoi(argv[3]);
     char saida[30];
     strcpy(saida,argv[1]);
     mkdir(saida,S_IRWXU | S_IRWXG | S_IRWXO);
@@ -303,44 +290,20 @@ int main(int argc, char* argv[]){
     }else{
         struct timeval inicio,fim;
         struct input in, tofork;
-        int assist[max],i,vivo=1, atual, fd_lista, lido, new,status,c,k,leu,total,contou;
+        int assist[max],i,vivo=1, atual, fd_lista, lido, new,status;
         double tempopassado;
-        char *contando = "tmp/contando.txt";
-        int cont_fd;
-        cont_fd = open(contando,O_CREAT | O_WRONLY,0640);
-        int zero = 0;
-        for (k=0;k<max;k++) {
-            write(cont_fd,&zero,sizeof(zero));
-        }
-        close(cont_fd);
+        for(i=0;i<max;i++) assist[i]=0;
         while(vivo){
             lido = 2;
-            cont_fd = open(contando,O_RDONLY);
-            total=0;
-            while((bytes_read = read(cont_fd,&contou,sizeof(contou)))>0) {
-                if (contou != 0) {
-                    perror("achei espaç");
-                    total++;
-                }
+            for(i=max-1;0<=i;i--){
+                if(assist[i] == 0)atual = i;
+                lido = 1;
             }
-            close(cont_fd);
-            if (total == max) {
-                perror("sem espaço");
-                wait(NULL);
-            } else {lido = 1;}
             fd_lista = open(LISTA,O_RDWR);
             memset(tofork.args,'\0',sizeof(tofork.args));
             while(lido == 1 && (bytes_read = read(fd_lista, &in , sizeof(struct input)))>0){
                 if(in.pronto == 0 || in.pronto == 4){ 
                     lido = 0;
-                    cont_fd = open(contando,O_RDWR);
-                    while((bytes_read= read(cont_fd,&contou,sizeof(contou)))>0 && contou != 0);
-                    if (contou == 0) {
-                        perror("editei");
-                        lseek(cont_fd,-sizeof(contou),SEEK_CUR);
-                        write(cont_fd,&in.id,sizeof(contou));
-                    }
-                    close(cont_fd);
                     assist[atual] = in.id;
                     in.pronto++;
                     tofork.id = in.id;
@@ -366,14 +329,6 @@ int main(int argc, char* argv[]){
                 wait(&status);
                 gettimeofday(&fim,NULL);
                 if(WIFEXITED(status)){
-                    cont_fd = open(contando,O_RDWR);
-                    while(bytes_read = read(cont_fd,&contou,sizeof(contou))>0 && contou != in.id);
-                    int zerou2 = 0;
-                    if (contou == in.id) {
-                        lseek(cont_fd,-sizeof(lido),SEEK_CUR);
-                        write(cont_fd,&zerou2,sizeof(zerou2));
-                    }
-                    close(cont_fd);
                     fd_lista = open(LISTA,O_RDWR);
                     while((bytes_read = read(fd_lista, &in, sizeof(struct input)))>0 && in.id!=tofork.id);
                     in.pronto++;
@@ -387,32 +342,7 @@ int main(int argc, char* argv[]){
             }
         }
         
-
-        
-
-
     }
-
-/*  char cpy[300], *str,*saida;
-    struct comand comand;
-    int fd;
-    while(*live){
-        strcpy(cpy,lista->list[0].args);
-        str = strtok(cpy, " ");
-        strcpy(comand.args[0],str);
-        *saida = toint(lista->list[0].pid);
-        i = 1;
-        while( str != NULL){
-            str = strtok(NULL, " ");
-            strcpy(comand.args[i],str);
-            i++;
-        }
-        fd = open(saida, O_WRONLY | O_CREAT | O_TRUNC,  0644);
-        dup2(fd,STDOUT_FILENO);
-        close(fd);
-        execl(comand.args[0],comand.args);
-    }*/
-
 
     unlink("server");
     return 0;
