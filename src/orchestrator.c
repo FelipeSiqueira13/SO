@@ -265,11 +265,13 @@ int main(int argc, char* argv[]){
             }else if(in.pronto == 0){
                 pos++;
                 in.id = pos;
+                gettimeofday(&in.inicio,NULL);
                 insert(in);
                 response(in.pid,in.id);
                 //uni exec
             }else if(in.pronto == 4){
                 pos++;
+                gettimeofday(&in.inicio,NULL);
                 in.id = pos;
                 insert(in);
                 response(in.pid,in.id);
@@ -288,38 +290,56 @@ int main(int argc, char* argv[]){
 
         _exit(0);
     }else{
-        struct timeval inicio,fim;
+        struct timeval fim;
         struct input in, tofork;
-        int assist[max],i,vivo=1, atual, fd_lista, lido, new,status;
+        int i,vivo=1, atual, fd_lista, lido, new,status, act;
         double tempopassado;
-        for(i=0;i<max;i++) assist[i]=0;
+        int cont = open("tmp/assis.txt", O_CREAT | O_WRONLY, 0640);
+        int array[max];
+        int zero = 0, temp, bytes_read2;
+        for(i = 0; i < max;i++) write(cont,&zero,sizeof(zero));
+        close(cont);
         while(vivo){
+            cont = open("tmp/assis.txt", O_RDONLY);
+            i = 0;
+            while (bytes_read = read(cont, &temp, sizeof(temp))>0)
+            {
+                if(temp != 0)act++;
+            }
+            close(cont);
             lido = 2;
-            for(i=max-1;0<=i;i--){
-                if(assist[i] == 0)atual = i;
+            act = 0;
+            if(max<=act){
+                wait(NULL);
+            }else{
                 lido = 1;
             }
             fd_lista = open(LISTA,O_RDWR);
             memset(tofork.args,'\0',sizeof(tofork.args));
             while(lido == 1 && (bytes_read = read(fd_lista, &in , sizeof(struct input)))>0){
                 if(in.pronto == 0 || in.pronto == 4){ 
-                    lido = 0;
-                    assist[atual] = in.id;
-                    in.pronto++;
-                    tofork.id = in.id;
-                    tofork.pid = in.pid;
-                    strcpy(tofork.args,in.args);
-                    tofork.pronto = in.pronto;
-                    tofork.time = 0;
-                    lseek(fd_lista, -sizeof(struct input), SEEK_CUR);
-                    write(fd_lista, &in, sizeof(struct input));
+                    cont = open("tmp/assis.txt", O_RDWR);
+                    while( ((bytes_read2 = read(cont, &temp , sizeof(temp)))>0) && temp!=0);
+                    if(temp == 0){
+                        in.pronto++;
+                        lido = 0;
+                        lseek(cont, -sizeof(temp), SEEK_CUR);
+                        write(cont, &in.id, sizeof(temp));
+                        tofork.id = in.id;
+                        tofork.pid = in.pid;
+                        strcpy(tofork.args,in.args);
+                        tofork.pronto = in.pronto;
+                        tofork.time = 0;
+                        lseek(fd_lista, -sizeof(struct input), SEEK_CUR);
+                        write(fd_lista, &in, sizeof(struct input));
+                    }
+                    close(cont);
                 }
             }
             close(fd_lista);
             new = 1;
             if (lido==0) new = fork();
             if(new==0){
-                gettimeofday(&inicio,NULL);
                 if(tofork.pronto==1){
                 single_exec(tofork,saida);
 
@@ -332,8 +352,15 @@ int main(int argc, char* argv[]){
                     fd_lista = open(LISTA,O_RDWR);
                     while((bytes_read = read(fd_lista, &in, sizeof(struct input)))>0 && in.id!=tofork.id);
                     in.pronto++;
-                    tempopassado = (fim.tv_sec - inicio.tv_sec) * 1000.0;
-                    tempopassado += (fim.tv_usec - inicio.tv_usec) / 1000.0;
+                    cont = open("tmp/assis.txt", O_RDWR);
+                    while( bytes_read2 = read(cont, &temp , sizeof(temp))>0 && temp!=in.id);
+                    if(temp == in.id){
+                        lseek(cont, -sizeof(temp), SEEK_CUR);
+                        write(cont, &zero, sizeof(temp));
+                    }
+                    close(cont);
+                    tempopassado = (fim.tv_sec - in.inicio.tv_sec) * 1000.0;
+                    tempopassado += (fim.tv_usec - in.inicio.tv_usec) / 1000.0;
                     in.time = (int)tempopassado;
                     lseek(fd_lista, -sizeof(struct input), SEEK_CUR);
                     write(fd_lista, &in, sizeof(struct input));

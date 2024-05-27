@@ -38,9 +38,8 @@ int main(int argc, char** argv){
             }
             write(fd_send, &in, sizeof(struct input));
 
-            //exec_unico(in.args);
-        }//elif (strcmp(argv[3],"-p") == 0){//execução de muitas tarefas}  
-        else if(strcmp("-p", argv[3])==0){
+           
+        }else if(strcmp("-p", argv[3])==0){
             in.time = atoi(argv[2]);
             in.pronto = 4;
             in.id = 0;

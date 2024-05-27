@@ -4,7 +4,9 @@ struct input{
                 // multi 4 não pronto, 5 executando, 6 terminado
                 // 8 status
                 // 16 shutdown
+    
     int id;
+    struct timeval inicio;
     pid_t pid;
     char args[300];
 };
